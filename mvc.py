@@ -3,7 +3,6 @@ import requests
 import requests_unixsocket
 
 
-
 urls = (
     '/', 'index'
 )
