@@ -40,6 +40,7 @@ class run:
         # Create a UDS socket
         text = ""
         data = web.input()
+        print data
         image = data.image
         envs = data.env
         ports = data.port
