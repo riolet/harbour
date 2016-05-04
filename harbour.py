@@ -41,11 +41,12 @@ class run:
         text = ""
         data = web.input()
         print data
+        registry = data.registry
         image = data.image
         envs = data.env
         ports = data.port
 
-        text += check_output(["docker", "pull", "172.21.51.236:5000/{image}:latest".format(image=image)])
+        text += check_output(["docker", "pull", "{registry}:5000/{image}:latest".format(registry=registry, image=image)])
 
         try:
             text += check_output(["docker", "stop",image])
@@ -67,10 +68,10 @@ class run:
         #print env_list
 
         print ["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-          "--name={name}".format(name=image)]+env_list+["172.21.51.236:5000/{image}".format(image=image)]
+          "--name={name}".format(name=image)]+env_list+["{registry}:5000/{image}".format(registry=registry, image=image)]
 
         text += check_output(["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-          "--name={name}".format(name=image)]+env_list+["172.21.51.236:5000/{image}".format(image=image)])
+          "--name={name}".format(name=image)]+env_list+["{registry}:5000/{image}".format(registry=registry, image=image)])
 
 
         return text
