@@ -39,9 +39,9 @@ class run:
     def POST(self):
         # Create a UDS socket
         text = ""
-        data = web.data()
+        data = web.input()
         print data
-        return text
+
         registry = data.registry
         image = data.image
         envs = data.env
@@ -49,14 +49,16 @@ class run:
 
         text += check_output(["docker", "pull", "{registry}:5000/{image}:latest".format(registry=registry, image=image)])
 
+        name = "{image}_{port}".format(image=image,port=ports.split(":")[0])
+
         try:
-            text += check_output(["docker", "stop",image])
+            text += check_output(["docker", "stop", name])
         except:
             text += "Image not stopped"
 
 
         try:
-            text += check_output(["docker", "rm", image])
+            text += check_output(["docker", "rm", name])
         except:
             text += "Image not removed"
 
@@ -69,10 +71,10 @@ class run:
         #print env_list
 
         print ["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-          "--name={name}".format(name=image)]+env_list+["{registry}:5000/{image}".format(registry=registry, image=image)]
+          "--name={name}".format(name=name)]+env_list+["{registry}:5000/{image}".format(registry=registry, image=image)]
 
         text += check_output(["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-          "--name={name}".format(name=image)]+env_list+["{registry}:5000/{image}".format(registry=registry, image=image)])
+          "--name={name}".format(name=name)]+env_list+["{registry}:5000/{image}".format(registry=registry, image=image)])
 
 
         return text
