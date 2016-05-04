@@ -41,6 +41,7 @@ class run:
         text = ""
         data = web.input()
         print data
+        return text
         registry = data.registry
         image = data.image
         envs = data.env
