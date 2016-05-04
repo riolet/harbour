@@ -36,7 +36,7 @@ class index:
 
 
 class run:
-    def GET(self):
+    def POST(self):
         # Create a UDS socket
         text = ""
         data = web.input()
