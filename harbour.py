@@ -39,7 +39,7 @@ class run:
     def POST(self):
         # Create a UDS socket
         text = ""
-        data = web.input()
+        data = web.data()
         print data
         return text
         registry = data.registry
