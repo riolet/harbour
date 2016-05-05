@@ -86,7 +86,7 @@ class run:
         # Create a UDS socket
         text = ""
         data = json.loads(web.input(),strict=False)
-        #print data
+        return data
         registry = data['registry']
         image = data['image']
         envs = data['env']
