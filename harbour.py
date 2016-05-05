@@ -8,7 +8,7 @@ from subprocess import check_output
 urls = (
     '/', 'index',
     '/run', 'run',
-    '/drone-harbour-run', 'run'
+    '/drone-harbour-run', 'DroneHarbourRun'
 )
 
 
@@ -37,7 +37,7 @@ class index:
         return "Unknown Error"
 
 
-class dronerun:
+class DroneHarbourRun:
     def POST(self):
         # Create a UDS socket
         text = ""
