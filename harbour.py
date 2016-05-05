@@ -107,7 +107,7 @@ class DroneHarbourRun:
 
         label_list = []
         for key, val in labels.iteritems():
-            label_list += ["--label", str(key + "=" + val[:10] + (val[11:] and '...'))]
+            label_list += ["--label", str(key + "=" + val[:10] + (val[10:] and '...'))]
 
         # print env_list
 
