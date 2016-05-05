@@ -36,10 +36,10 @@ html_template="""
 </head>
 <body>
 <div class="page-header">
-        <h1>{{page_title}}</h1>
+        <h1>{page_title}</h1>
 </div>
 <div class="row">
-	{{page_content}}
+	{page_content}
 </div>
 </body>
 </html>
