@@ -42,6 +42,7 @@ class DroneHarbourRun:
         # Create a UDS socket
         text = ""
         data = json.loads(web.data(), strict=False)
+        return data
         registry = data['registry']
         image = data['image']
         envs = data['env']
