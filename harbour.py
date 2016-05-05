@@ -63,8 +63,9 @@ class index:
                 text += "<tr>"
                 for col_head in col_heads:
                     val = ""
-                    if col_head == 'Branch' and len(container['Labels'])>0:
-                        val = container['Labels']['branch']
+                    if col_head == 'Branch':
+                        if len(container['Labels'])>0:
+                            val = container['Labels']['branch']
                     elif col_head == "Ports":
                         ports = container['Ports']
                         count = 0
