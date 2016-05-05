@@ -7,8 +7,10 @@ from subprocess import check_output
 
 urls = (
     '/', 'index',
-    '/run', 'run'
+    '/run', 'run',
+    '/drone-harbour-run', 'run'
 )
+
 
 class index:
     def GET(self):
@@ -35,12 +37,11 @@ class index:
         return "Unknown Error"
 
 
-class run:
+class dronerun:
     def POST(self):
         # Create a UDS socket
         text = ""
-        data = web.input()
-        print data
+        data = json.loads(web.data())
         registry = data.registry
         image = data.image
         envs = data.env
@@ -77,6 +78,58 @@ class run:
                                  "{registry}:5000/{image}".format(registry=registry, image=image)])
 
 
+        return text
+
+
+class run:
+    def POST(self):
+        # Create a UDS socket
+        text = ""
+        data = json.loads(web.input(),strict=False)
+        #print data
+        registry = data['registry']
+        image = data['image']
+        envs = data['env']
+        ports = "{public_port}:{private_port}".format(public_port=data['public_port'],
+                                                      private_port=data['private_port'])
+
+        text += check_output(["docker", "pull",
+                              "{registry}:5000/{image}:latest".format(registry=registry, image=image)])
+
+        name = "{image}_{port}".format(image=image, port=ports.split(":")[0])
+
+        try:
+            text += check_output(["docker", "stop", name])
+        except:
+            text += "Image not stopped"
+
+        try:
+            text += check_output(["docker", "rm", name])
+        except:
+            text += "Image not removed"
+
+        jenvs = json.loads(envs)
+        env_list = []
+        for key, val in jenvs.iteritems():
+            env_list += ["-e", str(key + "=" + val)]
+
+        labels = {'branch': data['build']['branch'],
+                  'labels': data['build']['commit'],
+                  'commit_message': data['build']['message']}
+
+        label_list = []
+        for key, val in labels.iteritems():
+            label_list += ["--label", str(key + "=" + val)]
+
+        # print env_list
+
+        print ["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
+               "--name={name}".format(name=name)] + env_list + [
+                  "{registry}:5000/{image}".format(registry=registry, image=image)]
+
+        text += check_output(["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
+                              "--name={name}".format(name=name)] + env_list + label_list +
+                             ["{registry}:5000/{image}".format(registry=registry, image=image)])
         return text
 
 if __name__ == "__main__":
