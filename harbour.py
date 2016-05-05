@@ -43,7 +43,7 @@ class DroneHarbourRun:
         text = ""
         data = json.loads(web.data(), strict=False)
         print data
-        return data
+        #return data
         registry = data['registry']
         image = data['image']
         envs = data['env']
@@ -65,10 +65,9 @@ class DroneHarbourRun:
         except:
             text += "Image not removed"
 
-        jenvs = json.loads(envs)
         env_list = []
-        for key, val in jenvs.iteritems():
-            env_list += ["-e", str(key + "=" + val)]
+        for env in envs:
+            env_list += ["-e", str(env)]
 
         labels = {'branch': data['build']['branch'],
                   'labels': data['build']['commit'],
