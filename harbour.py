@@ -71,7 +71,7 @@ class index:
                         for port in ports:
                             if count > 0:
                                 val += "<br/>"
-                            val += port['PublicPort'] + " -> " + port['PrivatePort']
+                            val += str(port['PublicPort']) + " -> " + str(port['PrivatePort'])
                             count += 1
                     else:
                         val = str(container[col_head])
