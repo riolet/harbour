@@ -41,7 +41,7 @@ class DroneHarbourRun:
     def POST(self):
         # Create a UDS socket
         text = ""
-        data = json.loads(web.input(),strict=False)
+        data = json.loads(web.data(), strict=False)
         registry = data['registry']
         image = data['image']
         envs = data['env']
