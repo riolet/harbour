@@ -102,12 +102,12 @@ class DroneHarbourRun:
             env_list += ["-e", str(env)]
 
         labels = {'branch': data['build']['branch'],
-                  'labels': data['build']['commit'],
+                  'commit': data['build']['commit'],
                   'commit_message': data['build']['message']}
 
         label_list = []
         for key, val in labels.iteritems():
-            label_list += ["--label", str(key + "=" + val)]
+            label_list += ["--label", str(key + "=" + val[:10] + (val[11:] and '...'))]
 
         # print env_list
 
