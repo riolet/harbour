@@ -53,7 +53,7 @@ class index:
             # Access /path/to/page from /tmp/Labelsprofilesvc.sock
             r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/json?all=1')
             containers = r.json()
-            col_heads = ["Name", "Image", "Status", "Created", "Labels", "Ports"]
+            col_heads = ["Names", "Image", "Status", "Created", "Labels", "Ports"]
             text = "<table>"
             text += "<tr>"
             for col_head in col_heads:
