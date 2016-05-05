@@ -54,11 +54,14 @@ class index:
             r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/json?all=1')
             containers = r.json()
             col_heads = ["Names", "Image", "Status", "Created", "Branch", "Ports"]
-            text = "<table>"
-            text += "<tr>"
+            text="""
+            "<div class="col-md-12">
+                <table class="table">
+                    <thead>
+                        <tr>"""
             for col_head in col_heads:
-                text += "<td>" + col_head +"</td>"
-            text += "</tr>"
+                text += "<th>" + col_head +"</th>"
+            text += "</tr></thead><tbody>"
             for container in containers:
                 text += "<tr>"
                 for col_head in col_heads:
@@ -79,7 +82,7 @@ class index:
                     text += "<td>" + val + "</td>"
 
                 text += "</tr>"
-            text += "</table>"
+            text += "</tbody></table></div>"
             return html_template.format(page_title="Containers", page_content=text)
         return "Unknown Error"
 
