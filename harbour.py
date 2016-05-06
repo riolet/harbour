@@ -53,7 +53,7 @@ class index:
             # Access /path/to/page from /tmp/Labelsprofilesvc.sock
             r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/json?all=1')
             containers = r.json()
-            col_heads = ["Names", "Image", "Status", "Created", "Branch", "Ports"]
+            col_heads = ["Names", "Image", "Status", "Created", "Branch", "Ports", "Manage"]
             text="""
             "<div class="col-md-12">
                 <table class="table">
@@ -62,6 +62,7 @@ class index:
             for col_head in col_heads:
                 text += "<th>" + col_head +"</th>"
             text += "</tr></thead><tbody>"
+            name = None
             for container in containers:
                 text += "<tr>"
                 for col_head in col_heads:
@@ -77,6 +78,16 @@ class index:
                                 val += "<br/>"
                             val += str(port['PublicPort']) + " -> " + str(port['PrivatePort'])
                             count += 1
+                    elif col_head == "Names":
+                        if len(container[col_head])>0:
+                            Names = container['Names']
+                            for name in Names:
+                                if count > 0:
+                                    val += "<br/>"
+                                val += str(name)
+                                count += 1
+                    elif col_head == "Manage":
+                            val = '<a href="/logs?id={id}">logs</a>'.format(id=container['Id'])
                     else:
                         val = str(container[col_head])
                     text += "<td>" + val + "</td>"
