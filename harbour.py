@@ -89,7 +89,7 @@ class index:
                                 val += str(name)
                                 count += 1
                     elif col_head == "Manage":
-                            val = '<a href="/logs?name={name}">logs</a>'.format(id=container['Id'])
+                            val = '<a href="/logs?name={name}">logs</a>'.format(name=name)
                     else:
                         val = str(container[col_head])
                     text += "<td>" + val + "</td>"
