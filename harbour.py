@@ -3,7 +3,7 @@ import json
 import web
 import requests
 import requests_unixsocket
-from subprocess import check_output
+from subprocess import check_output, STDOUT
 
 urls = (
     '/', 'index',
@@ -199,7 +199,9 @@ class run:
 class logs:
     def GET(self):
         # Create a UDS socket
-        text = ""
+        text = """
+        "<div class="col-md-12">
+        """
         # with requests_unixsocket.monkeypatch():
         #     # Access /path/to/page from /tmp/Labelsprofilesvc.sock
         #     data = web.input()
@@ -208,7 +210,7 @@ class logs:
         #         text += line
         #     return text
         data = web.input()
-        text += check_output(["docker", "logs", data.id])
+        text += check_output(["docker", "logs", data.id],stderr=STDOUT)+"</div>"
         return html_template.format(page_title="Logs for {id}".format(id=data.id), page_content=text)
 
 if __name__ == "__main__":
