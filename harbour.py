@@ -203,7 +203,7 @@ class logs:
         with requests_unixsocket.monkeypatch():
             # Access /path/to/page from /tmp/Labelsprofilesvc.sock
             data = web.input()
-            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/logs?stderr=1&stdout=1'.format(id=data.id))
+            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/logs?stderr=1&stdout=1'.format(id=data.id), stream=True)
             return r.text
         return "Unknown Error"
 
