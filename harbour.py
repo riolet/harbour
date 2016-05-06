@@ -204,7 +204,9 @@ class logs:
             # Access /path/to/page from /tmp/Labelsprofilesvc.sock
             data = web.input()
             r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/logs?stderr=1&stdout=1'.format(id=data.id), stream=True)
-            return r.text
+            for line in r.iter_lines():
+                text += line
+            return text
         return "Unknown Error"
 
 if __name__ == "__main__":
