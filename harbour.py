@@ -81,6 +81,7 @@ class index:
                     elif col_head == "Names":
                         if len(container[col_head])>0:
                             Names = container['Names']
+                            count = 0
                             for name in Names:
                                 if count > 0:
                                     val += "<br/>"
