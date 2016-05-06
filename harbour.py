@@ -9,6 +9,7 @@ urls = (
     '/', 'index',
     '/run', 'run',
     '/drone-harbour-run', 'DroneHarbourRun'
+    '/logs', 'logs'
 )
 
 html_template="""
@@ -194,6 +195,17 @@ class run:
 
 
         return text
+
+class logs:
+    def GET(self):
+        # Create a UDS socket
+        text = ""
+        with requests_unixsocket.monkeypatch():
+            # Access /path/to/page from /tmp/Labelsprofilesvc.sock
+            data = web.input()
+            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/logs'.format(id=data.id))
+            return r.text
+        return "Unknown Error"
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
