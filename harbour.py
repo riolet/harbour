@@ -200,14 +200,16 @@ class logs:
     def GET(self):
         # Create a UDS socket
         text = ""
-        with requests_unixsocket.monkeypatch():
-            # Access /path/to/page from /tmp/Labelsprofilesvc.sock
-            data = web.input()
-            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/logs?stderr=1&stdout=1'.format(id=data.id), stream=True)
-            for line in r.iter_lines():
-                text += line
-            return text
-        return "Unknown Error"
+        # with requests_unixsocket.monkeypatch():
+        #     # Access /path/to/page from /tmp/Labelsprofilesvc.sock
+        #     data = web.input()
+        #     r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/logs?stderr=1&stdout=1'.format(id=data.id), stream=True)
+        #     for line in r.iter_lines():
+        #         text += line
+        #     return text
+        data = web.input()
+        text += check_output(["docker", "logs", data.id])
+        return html_template.format(page_title="Logs for {id}".format(id=data.id), page_content=text)
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
