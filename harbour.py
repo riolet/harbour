@@ -210,7 +210,7 @@ class logs:
         #         text += line
         #     return text
         data = web.input()
-        text += check_output(["docker", "logs", data.id],stderr=STDOUT)+"</div>"
+        text += "<pre>"+check_output(["docker", "logs", data.id],stderr=STDOUT)+"</pre></div>"
         return html_template.format(page_title="Logs for {id}".format(id=data.id), page_content=text)
 
 if __name__ == "__main__":
