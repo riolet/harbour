@@ -8,7 +8,7 @@ from subprocess import check_output
 urls = (
     '/', 'index',
     '/run', 'run',
-    '/drone-harbour-run', 'DroneHarbourRun'
+    '/drone-harbour-run', 'DroneHarbourRun',
     '/logs', 'logs'
 )
 
