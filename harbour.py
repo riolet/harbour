@@ -4,6 +4,7 @@ import web
 import requests
 import requests_unixsocket
 from subprocess import check_output, STDOUT
+import os
 
 urls = (
     '/', 'index',
@@ -46,6 +47,16 @@ html_template="""
 </html>
 """
 
+
+def list_files(startpath):
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        print('{}{}/'.format(indent, os.path.basename(root)))
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            print('{}{}'.format(subindent, f))
+
 class index:
     def GET(self):
         # Create a UDS socket
@@ -69,7 +80,7 @@ class index:
                 for col_head in col_heads:
                     val = ""
                     if col_head == 'Branch':
-                        if container['Labels'] is not None and len(container['Labels'])>0:
+                        if 'Labels' in container and 'branch' in container['Labels']:
                             val = container['Labels']['branch']
                     elif col_head == "Ports":
                         ports = container['Ports']
