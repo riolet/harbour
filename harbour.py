@@ -1,5 +1,5 @@
 import json
-
+from json2html import *
 import web
 import requests
 import requests_unixsocket
@@ -10,7 +10,9 @@ urls = (
     '/', 'index',
     '/run', 'run',
     '/drone-harbour-run', 'DroneHarbourRun',
-    '/logs', 'logs'
+    '/logs', 'logs',
+    '/inspect', 'inspect',
+    '/top', 'top'
 )
 
 html_template="""
@@ -37,11 +39,17 @@ html_template="""
 
 </head>
 <body>
-<div class="page-header">
-        <h1>{page_title}</h1>
-</div>
-<div class="row">
-	{page_content}
+<div class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-header">
+                    <h1>{page_title}</h1>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        {page_content}
+    </div>
 </div>
 </body>
 </html>
@@ -67,7 +75,7 @@ class index:
             containers = r.json()
             col_heads = ["Names", "Image", "Status", "Created", "Branch", "Ports", "Manage"]
             text="""
-            "<div class="col-md-12">
+            <div class="col-md-12">
                 <table class="table">
                     <thead>
                         <tr>"""
@@ -80,7 +88,7 @@ class index:
                 for col_head in col_heads:
                     val = ""
                     if col_head == 'Branch':
-                        if container is not None and 'Labels' in container and 'branch' in container['Labels']:
+                        if container and 'Labels' in container and container['Labels'] and 'branch' in container['Labels']:
                             val = container['Labels']['branch']
                     elif col_head == "Ports":
                         ports = container['Ports']
@@ -91,8 +99,8 @@ class index:
                             val += str(port['PublicPort']) + " -> " + str(port['PrivatePort'])
                             count += 1
                     elif col_head == "Names":
-                        if len(container[col_head])>0:
-                            Names = container['Names']
+                        if container and col_head in container and container[col_head]:
+                            Names = container[col_head]
                             count = 0
                             for name in Names:
                                 if count > 0:
@@ -100,7 +108,9 @@ class index:
                                 val += str(name)
                                 count += 1
                     elif col_head == "Manage":
-                            val = '<a href="/logs?name={name}">logs</a>'.format(name=name)
+                            val = '<a href="/logs?name={name}">logs</a> ' \
+                                  '<a href="/inspect?id={id}">inspect</a> ' \
+                                  '<a href="/top?id={id}">top</a>'.format(name=name, id=container['Id'])
                     else:
                         val = str(container[col_head])
                     text += "<td>" + val + "</td>"
@@ -201,7 +211,7 @@ class run:
                   "{registry}:5000/{image}".format(registry=registry, image=image)]
 
         text += check_output(["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-                              "--name={name}".format(name=name)] + env_list + [
+                              "--name={name} --hostname={name}".format(name=name)] + env_list + [
                                  "{registry}:5000/{image}".format(registry=registry, image=image)])
 
 
@@ -216,6 +226,30 @@ class logs:
         data = web.input()
         text += "<pre>"+check_output(["docker", "logs", data.name], stderr=STDOUT)+"</pre></div>"
         return html_template.format(page_title="Logs for {name}".format(name=data.name), page_content=text)
+
+class inspect:
+    def GET(self):
+        # Create a UDS socket
+        text = """
+        "<div class="col-md-12">
+        """
+        data = web.input()
+        with requests_unixsocket.monkeypatch():
+            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/json'.format(id=data.id))
+            text += json2html.convert(json = r.text) + "</div>"
+            return html_template.format(page_title="Inspecting", page_content=text)
+
+class top:
+    def GET(self):
+        # Create a UDS socket
+        text = """
+        "<div class="col-md-12">
+        """
+        data = web.input()
+        with requests_unixsocket.monkeypatch():
+            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/top'.format(id=data.id))
+            text += json2html.convert(json = r.text) + "</div>"
+            return html_template.format(page_title="Inspecting", page_content=text)
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
