@@ -1,13 +1,13 @@
 import json
 from json2html import *
 import web
-import requests
-import requests_unixsocket
-from subprocess import check_output, STDOUT
-import os
+from docker import client
+
+BASE_URL = 'unix://var/run/docker.sock'
 
 urls = (
-    '/', 'index',
+    '/', 'containers',
+    '/containers', 'containers',
     '/run', 'run',
     '/drone-harbour-run', 'DroneHarbourRun',
     '/logs', 'logs',
@@ -40,14 +40,32 @@ html_template="""
 </head>
 <body>
 <div class="content">
-    <div class="row">
+    <div class="navbar navbar-inverse">
+          <div class="container-fluid">
+            <div class="navbar-header">
+              <a href="../" class="navbar-brand">Harbour</a>
+              <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+            </div>
+          </div>
+
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li><a href="/containers">Containers</a></li>
+                </ul>
+            </div>
+    </div>
+    <div class="row-fluid">
         <div class="col-md-12">
             <div class="page-header">
                     <h1>{page_title}</h1>
             </div>
         </div>
     </div>
-    <div class="row">
+    <div class="row-fluid">
         {page_content}
     </div>
 </div>
@@ -56,16 +74,16 @@ html_template="""
 """
 
 
-def list_files(startpath):
-    for root, dirs, files in os.walk(startpath):
-        level = root.replace(startpath, '').count(os.sep)
-        indent = ' ' * 4 * (level)
-        print('{}{}/'.format(indent, os.path.basename(root)))
-        subindent = ' ' * 4 * (level + 1)
-        for f in files:
-            print('{}{}'.format(subindent, f))
+# def list_files(startpath):
+#     for root, dirs, files in os.walk(startpath):
+#         level = root.replace(startpath, '').count(os.sep)
+#         indent = ' ' * 4 * (level)
+#         print('{}{}/'.format(indent, os.path.basename(root)))
+#         subindent = ' ' * 4 * (level + 1)
+#         for f in files:
+#             print('{}{}'.format(subindent, f))
 
-class index:
+class containers:
     def GET(self):
         # Create a UDS socket
         text = ""
