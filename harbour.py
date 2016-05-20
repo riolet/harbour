@@ -215,7 +215,7 @@ class logs:
         "<div class="col-md-12">
         """
         data = web.input()
-        text += "<pre>"+check_output(["docker", "logs", data.name], stderr=STDOUT)+"</pre></div>"
+        text += "<pre>"+check_output(["docker", "logs", data.name[1:]], stderr=STDOUT)+"</pre></div>"
         return html_template.format(page_title="Logs for {name}".format(name=data.name[1:]), page_content=text)
 
 class restart:
@@ -225,7 +225,7 @@ class restart:
         "<div class="col-md-12">
         """
         data = web.input()
-        text += "<pre>"+check_output(["docker", "restart", data.name], stderr=STDOUT)+"</pre></div>"
+        text += "<pre>"+check_output(["docker", "restart", data.name[1:]], stderr=STDOUT)+"</pre></div>"
         return html_template.format(page_title="Results for <pre>restart {name}</pre>".format(name=data.name[1:]), page_content=text)
 
 if __name__ == "__main__":
