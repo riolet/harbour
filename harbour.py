@@ -80,7 +80,7 @@ class index:
                 for col_head in col_heads:
                     val = ""
                     if col_head == 'Branch':
-                        if container is not None and 'Labels' in container and 'branch' in container['Labels']:
+                        if container is not None and 'Labels' in container and container['Labels'] is not None and 'branch' in container['Labels']:
                             val = container['Labels']['branch']
                     elif col_head == "Ports":
                         ports = container['Ports']
