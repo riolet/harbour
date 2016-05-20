@@ -10,7 +10,8 @@ urls = (
     '/', 'index',
     '/run', 'run',
     '/drone-harbour-run', 'DroneHarbourRun',
-    '/logs', 'logs'
+    '/logs', 'logs',
+    '/restart', 'restart'
 )
 
 html_template="""
@@ -100,7 +101,7 @@ class index:
                                 val += str(name)
                                 count += 1
                     elif col_head == "Manage":
-                            val = '<a href="/logs?name={name}">logs</a>'.format(name=name)
+                            val = '<a href="/logs?name={name}">logs</a> <a href="/restart?name={name}">restart</a>'.format(name=name)
                     else:
                         val = str(container[col_head])
                     text += "<td>" + val + "</td>"
@@ -216,6 +217,16 @@ class logs:
         data = web.input()
         text += "<pre>"+check_output(["docker", "logs", data.name], stderr=STDOUT)+"</pre></div>"
         return html_template.format(page_title="Logs for {name}".format(name=data.name), page_content=text)
+
+class restart:
+    def GET(self):
+        # Create a UDS socket
+        text = """
+        "<div class="col-md-12">
+        """
+        data = web.input()
+        text += "<pre>"+check_output(["docker", "restart", data.name], stderr=STDOUT)+"</pre></div>"
+        return html_template.format(page_title="Results for <pre>restart {name}</pre>".format(name=data.name), page_content=text)
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
