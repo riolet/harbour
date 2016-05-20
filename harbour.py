@@ -216,7 +216,7 @@ class logs:
         """
         data = web.input()
         text += "<pre>"+check_output(["docker", "logs", data.name], stderr=STDOUT)+"</pre></div>"
-        return html_template.format(page_title="Logs for {name}".format(name=data.name), page_content=text)
+        return html_template.format(page_title="Logs for {name}".format(name=data.name[1:]), page_content=text)
 
 class restart:
     def GET(self):
@@ -226,7 +226,7 @@ class restart:
         """
         data = web.input()
         text += "<pre>"+check_output(["docker", "restart", data.name], stderr=STDOUT)+"</pre></div>"
-        return html_template.format(page_title="Results for <pre>restart {name}</pre>".format(name=data.name), page_content=text)
+        return html_template.format(page_title="Results for <pre>restart {name}</pre>".format(name=data.name[1:]), page_content=text)
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
