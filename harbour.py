@@ -1,7 +1,7 @@
 import json
 from json2html import *
 import web
-from docker import client
+from docker import Client
 
 BASE_URL = 'unix://var/run/docker.sock'
 
@@ -87,11 +87,11 @@ class containers:
     def GET(self):
         # Create a UDS socket
         text = ""
-        with requests_unixsocket.monkeypatch():
+        try:
+            cli = Client(base_url='unix://var/run/docker.sock')
             # Access /path/to/page from /tmp/Labelsprofilesvc.sock
-            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/json?all=1')
-            containers = r.json()
-            col_heads = ["Names", "Image", "Status", "Created", "Branch", "Ports", "Manage"]
+            containers = cli.containers()
+            col_heads = ["Names", "Image", "Status", "Created", "Ports", "Manage"]
             text="""
             <div class="col-md-12">
                 <table class="table">
@@ -136,7 +136,8 @@ class containers:
                 text += "</tr>"
             text += "</tbody></table></div>"
             return html_template.format(page_title="Containers", page_content=text)
-        return "Unknown Error"
+        except Exception as e:
+            return "Unknown Error: "+str(e)
 
 
 class DroneHarbourRun:
@@ -149,90 +150,34 @@ class DroneHarbourRun:
         registry = data['registry']
         image = data['image']
         envs = data['env']
-        ports = "{public_port}:{private_port}".format(public_port=data['public_port'],
-                                                      private_port=data['private_port'])
+        public_port=data['public_port']
+        private_port=data['private_port']
 
-        text += check_output(["docker", "pull",
-                              "{registry}:5000/{image}:latest".format(registry=registry, image=image)])
+        cli = Client(base_url='unix://var/run/docker.sock')
 
-        name = "{image}_{port}".format(image=image, port=ports.split(":")[0])
+        text += cli.pull("{registry}:5000/{image}:latest".format(registry=registry, image=image))
+
+        name = "{image}_{port}".format(image=image, port=public_port)
 
         try:
-            text += check_output(["docker", "stop", name])
+            text += cli.stop(name)
         except:
             text += "Image not stopped"
 
         try:
-            text += check_output(["docker", "rm", name])
+            text += cli.remove_container(name)
         except:
             text += "Image not removed"
 
-        env_list = []
-        for env in envs:
-            env_list += ["-e", str(env)]
 
         labels = {'branch': data['build']['branch'],
                   'commit': data['build']['commit'],
                   'commit_message': data['build']['message']}
 
-        label_list = []
-        for key, val in labels.iteritems():
-            label_list += ["--label", str(key + "=" + val[:10] + (val[10:] and '...'))]
-
-        # print env_list
-
-        print ["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-               "--name={name}".format(name=name)] + env_list + [
-                  "{registry}:5000/{image}".format(registry=registry, image=image)]
-
-        text += check_output(["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-                              "--name={name}".format(name=name)] + env_list + label_list +
-                             ["{registry}:5000/{image}".format(registry=registry, image=image)])
-        return text
-
-
-class run:
-    def POST(self):
-        # Create a UDS socket
-        text = ""
-        data = web.input()
-        print data
-        registry = data.registry
-        image = data.image
-        envs = data.env
-        ports = data.port
-
-        text += check_output(["docker", "pull",
-                              "{registry}:5000/{image}:latest".format(registry=registry, image=image)])
-
-        name = "{image}_{port}".format(image=image, port=ports.split(":")[0])
-
-        try:
-            text += check_output(["docker", "stop", name])
-        except:
-            text += "Image not stopped"
-
-        try:
-            text += check_output(["docker", "rm", name])
-        except:
-            text += "Image not removed"
-
-        jenvs = json.loads(envs)
-        env_list = []
-        for key, val in jenvs.iteritems():
-            env_list += ["-e", str(key + "=" + val)]
-
-        # print env_list
-
-        print ["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-               "--name={name}".format(name=name)] + env_list + [
-                  "{registry}:5000/{image}".format(registry=registry, image=image)]
-
-        text += check_output(["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-                              "--name={name} --hostname={name}".format(name=name)] + env_list + [
-                                 "{registry}:5000/{image}".format(registry=registry, image=image)])
-
-
+        text = cli.create_container(image="{registry}:5000/{image}".format(registry=registry, image=image),
+                                    hostname=name, ports=public_port, environment=envs,
+                                    labels=labels)
+        text = cli.start(image=image)
         return text
 
 class logs:
@@ -242,8 +187,8 @@ class logs:
         "<div class="col-md-12">
         """
         data = web.input()
-        text += "<pre>"+check_output(["docker", "logs", data.name], stderr=STDOUT)+"</pre></div>"
-        return html_template.format(page_title="Logs for {name}".format(name=data.name), page_content=text)
+        # text += "<pre>"+check_output(["docker", "logs", data.name], stderr=STDOUT)+"</pre></div>"
+        # return html_template.format(page_title="Logs for {name}".format(name=data.name), page_content=text)
 
 class inspect:
     def GET(self):
@@ -252,10 +197,10 @@ class inspect:
         "<div class="col-md-12">
         """
         data = web.input()
-        with requests_unixsocket.monkeypatch():
-            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/json'.format(id=data.id))
-            text += json2html.convert(json = r.text) + "</div>"
-            return html_template.format(page_title="Inspecting", page_content=text)
+        # with requests_unixsocket.monkeypatch():
+        #     r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/json'.format(id=data.id))
+        #     text += json2html.convert(json = r.text) + "</div>"
+        #     return html_template.format(page_title="Inspecting", page_content=text)
 
 class top:
     def GET(self):
@@ -264,10 +209,10 @@ class top:
         "<div class="col-md-12">
         """
         data = web.input()
-        with requests_unixsocket.monkeypatch():
-            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/top'.format(id=data.id))
-            text += json2html.convert(json = r.text) + "</div>"
-            return html_template.format(page_title="Inspecting", page_content=text)
+        # with requests_unixsocket.monkeypatch():
+        #     r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/{id}/top'.format(id=data.id))
+        #     text += json2html.convert(json = r.text) + "</div>"
+        #     return html_template.format(page_title="Inspecting", page_content=text)
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
