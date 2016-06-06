@@ -105,10 +105,7 @@ class containers:
                 text += "<tr>"
                 for col_head in col_heads:
                     val = ""
-                    if col_head == 'Branch':
-                        if container and 'Labels' in container and container['Labels'] and 'branch' in container['Labels']:
-                            val = container['Labels']['branch']
-                    elif col_head == "Ports":
+                    if col_head == "Ports":
                         ports = container['Ports']
                         count = 0
                         for port in ports:
