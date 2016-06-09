@@ -89,7 +89,9 @@ class index:
                         for port in ports:
                             if count > 0:
                                 val += "<br/>"
-                            val += str(port['PublicPort']) + " -> " + str(port['PrivatePort'])
+                            if 'PublicPort' in port:
+                                val += str(port['PublicPort']) + " -> "
+                            val += str(port['PrivatePort'])
                             count += 1
                     elif col_head == "Names":
                         if len(container[col_head])>0:
@@ -140,9 +142,11 @@ class DroneHarbourRun:
         except:
             text += "Image not removed"
 
+
         env_list = []
-        for env in envs:
-            env_list += ["-e", str(env)]
+        if envs is not None:
+            for env in envs:
+                env_list += ["-e", str(env)]
 
         labels = {'branch': data['build']['branch'],
                   'commit': data['build']['commit'],
