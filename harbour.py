@@ -13,6 +13,8 @@ urls = (
     '/logs', 'logs',
     '/inspect', 'inspect',
     '/top', 'top'
+    '/logs', 'logs',
+    '/restart', 'restart'
 )
 
 html_template="""
@@ -106,6 +108,10 @@ class containers:
                 for col_head in col_heads:
                     val = ""
                     if col_head == "Ports":
+                    if col_head == 'Branch':
+                        if container is not None and 'Labels' in container and container['Labels'] is not None and 'branch' in container['Labels']:
+                            val = container['Labels']['branch']
+                    elif col_head == "Ports":
                         ports = container['Ports']
                         count = 0
                         for port in ports:
