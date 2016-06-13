@@ -153,9 +153,19 @@ class containers:
             return "Unknown Error: " + str(e)
 
 
+class HarbourInternalError(web.HTTPError):
+    """500 Internal Server Error`."""
+    message = "internal server error"
+
+    def __init__(self, message=None):
+        status = '500 Internal Server Error ' + message
+        headers = {'Content-Type': 'text/html'}
+        web.HTTPError.__init__(self, status, headers, message or self.message)
+
+
 def error_out(msg, e):
     traceback.print_exc()
-    return web.internalerror(msg + str(e))
+    return HarbourInternalError(message = msg + ". Docker API says: " + str(e))
 
 
 class DroneHarbourRun:
@@ -271,7 +281,26 @@ class action:
                 text += "<pre>" + cli.logs(id) + "</pre>"
             except Exception as e:
                 return error_out("Unable to get image logs", e)
+        elif data.action == "inspect":
+            try:
+                text += "<pre>" + json2html.convert(json=json.dumps(cli.inspect_container(id))) + "</pre>"
+            except Exception as e:
+                return error_out("Unable to inspect container", e)
+        elif data.action == "top":
+            try:
+                top = cli.top(id)
+                toplist = []
+                for process in top['Processes']:
+                    topdic = {}
+                    header_idx=0
+                    for header in top['Titles']:
+                        topdic[header]=process[header_idx]
+                        header_idx += 1
+                    toplist += [topdic]
 
+                text += "<pre>" + json2html.convert(json=json.dumps({'Top':toplist})) + "</pre>"
+            except Exception as e:
+                return error_out("Unable to run top con container", e)
         return html_template.format(page_title="{action} for {name}".format(action=action, name=name),
                                     page_content=text)
 
