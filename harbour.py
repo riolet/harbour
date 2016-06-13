@@ -1,20 +1,20 @@
 import json
-
+import traceback
+from json2html import *
 import web
-import requests
-import requests_unixsocket
-from subprocess import check_output, STDOUT
-import os
+from docker import Client
+
+BASE_URL = 'unix://var/run/docker.sock'
 
 urls = (
-    '/', 'index',
+    '/', 'containers',
+    '/containers', 'containers',
     '/run', 'run',
     '/drone-harbour-run', 'DroneHarbourRun',
-    '/logs', 'logs',
-    '/restart', 'restart'
+    '/action', 'action',
 )
 
-html_template="""
+html_template = """
 <!DOCTYPE html>
 <html lang="en">
 
@@ -38,42 +38,66 @@ html_template="""
 
 </head>
 <body>
-<div class="page-header">
-        <h1>{page_title}</h1>
-</div>
-<div class="row">
-	{page_content}
+<div class="content">
+    <div class="navbar navbar-inverse">
+          <div class="container-fluid">
+            <div class="navbar-header">
+              <a href="../" class="navbar-brand">Harbour</a>
+              <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+            </div>
+          </div>
+
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li><a href="/containers">Containers</a></li>
+                </ul>
+            </div>
+    </div>
+    <div class="row-fluid">
+        <div class="col-md-12">
+            <div class="page-header">
+                    <h1>{page_title}</h1>
+            </div>
+        </div>
+    </div>
+    <div class="row-fluid">
+        {page_content}
+    </div>
 </div>
 </body>
 </html>
 """
 
 
-def list_files(startpath):
-    for root, dirs, files in os.walk(startpath):
-        level = root.replace(startpath, '').count(os.sep)
-        indent = ' ' * 4 * (level)
-        print('{}{}/'.format(indent, os.path.basename(root)))
-        subindent = ' ' * 4 * (level + 1)
-        for f in files:
-            print('{}{}'.format(subindent, f))
+# def list_files(startpath):
+#     for root, dirs, files in os.walk(startpath):
+#         level = root.replace(startpath, '').count(os.sep)
+#         indent = ' ' * 4 * (level)
+#         print('{}{}/'.format(indent, os.path.basename(root)))
+#         subindent = ' ' * 4 * (level + 1)
+#         for f in files:
+#             print('{}{}'.format(subindent, f))
 
-class index:
+class containers:
     def GET(self):
         # Create a UDS socket
         text = ""
-        with requests_unixsocket.monkeypatch():
+        try:
+            cli = Client(base_url='unix://var/run/docker.sock')
             # Access /path/to/page from /tmp/Labelsprofilesvc.sock
-            r = requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/containers/json?all=1')
-            containers = r.json()
-            col_heads = ["Names", "Image", "Status", "Created", "Branch", "Ports", "Manage"]
-            text="""
-            "<div class="col-md-12">
+            containers = cli.containers()
+            col_heads = ["Names", "Image", "Status", "Created", "Ports", "Manage"]
+            text = """
+            <div class="col-md-12">
                 <table class="table">
                     <thead>
                         <tr>"""
             for col_head in col_heads:
-                text += "<th>" + col_head +"</th>"
+                text += "<th>" + col_head + "</th>"
             text += "</tr></thead><tbody>"
             name = None
             for container in containers:
@@ -81,7 +105,8 @@ class index:
                 for col_head in col_heads:
                     val = ""
                     if col_head == 'Branch':
-                        if container is not None and 'Labels' in container and container['Labels'] is not None and 'branch' in container['Labels']:
+                        if container is not None and 'Labels' in container and container[
+                            'Labels'] is not None and 'branch' in container['Labels']:
                             val = container['Labels']['branch']
                     elif col_head == "Ports":
                         ports = container['Ports']
@@ -94,8 +119,8 @@ class index:
                             val += str(port['PrivatePort'])
                             count += 1
                     elif col_head == "Names":
-                        if len(container[col_head])>0:
-                            Names = container['Names']
+                        if container and col_head in container and container[col_head]:
+                            Names = container[col_head]
                             count = 0
                             for name in Names:
                                 if count > 0:
@@ -103,7 +128,20 @@ class index:
                                 val += str(name)
                                 count += 1
                     elif col_head == "Manage":
-                            val = '<a href="/logs?name={name}">logs</a> <a href="/restart?name={name}">restart</a>'.format(name=name)
+                        val += """
+                                <form action="/action"><select id="sel_id" name="action"  onchange="this.form.submit();">
+                                <option value="-1">Select</option>
+                                <option value="start">Start</option>
+                                <option value="stop">Stop</option>
+                                <option value="restart">Restart</option>
+                                <option value="logs">Logs</option>
+                                <option value="top">Top</option>
+                                <option value="inspect">Inspect</option>
+                                </select>
+                                <input type="hidden" name="name" value="{name}">
+                                <input type="hidden" name="id" value="{id}">
+                                </form>
+                            """.format(name=name, id=container['Id'])
                     else:
                         val = str(container[col_head])
                     text += "<td>" + val + "</td>"
@@ -111,7 +149,13 @@ class index:
                 text += "</tr>"
             text += "</tbody></table></div>"
             return html_template.format(page_title="Containers", page_content=text)
-        return "Unknown Error"
+        except Exception as e:
+            return "Unknown Error: " + str(e)
+
+
+def error_out(msg, e):
+    traceback.print_exc()
+    return web.internalerror(msg + str(e))
 
 
 class DroneHarbourRun:
@@ -119,26 +163,32 @@ class DroneHarbourRun:
         # Create a UDS socket
         text = ""
         data = json.loads(web.data(), strict=False)
+        print web.data()
         print data
-        #return data
         registry = data['registry']
         image = data['image']
-        envs = data['env']
-        ports = "{public_port}:{private_port}".format(public_port=data['public_port'],
-                                                      private_port=data['private_port'])
+        tag = data['tag']
+        envs = data['env'] or []
+        ports = data['ports'] or []
+        port_bindings = data['port_bindings'] or {}
+        links = data['links'] or {}
+        publish_all_ports = data['publish_all_ports'] or False
 
-        text += check_output(["docker", "pull",
-                              "{registry}:5000/{image}:latest".format(registry=registry, image=image)])
+        cli = Client(base_url='unix://var/run/docker.sock')
 
-        name = "{image}_{port}".format(image=image, port=ports.split(":")[0])
+        cli.pull("{registry}:5000/{image}:latest".format(registry=registry, image=image))
+
+        name = image
 
         try:
-            text += check_output(["docker", "stop", name])
+            cli.stop(name)
+            text += "Image stopped"
         except:
             text += "Image not stopped"
 
         try:
-            text += check_output(["docker", "rm", name])
+            cli.remove_container(name)
+            text += "Image removed"
         except:
             text += "Image not removed"
 
@@ -152,89 +202,80 @@ class DroneHarbourRun:
                   'commit': data['build']['commit'],
                   'commit_message': data['build']['message']}
 
-        label_list = []
-        for key, val in labels.iteritems():
-            label_list += ["--label", str(key + "=" + val[:30] + (val[30:] and '...'))]
+        full_image_name = "{registry}:5000/{image}".format(registry=registry, image=image)
 
-        # print env_list
-
-        print ["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-               "--name={name}".format(name=name)] + env_list + [
-                  "{registry}:5000/{image}".format(registry=registry, image=image)]
-
-        text += check_output(["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-                              "--name={name}".format(name=name)] + env_list + label_list +
-                             ["{registry}:5000/{image}".format(registry=registry, image=image)])
+        if tag is not None and not tag == "$$TAG":
+            try:
+                cli.pull(repository=full_image_name, tag=tag)
+            except Exception as e:
+                return error_out("Unable to pull image",e)
+            full_image_name += ":{tag}".format(tag=tag)
+        else:
+            try:
+                cli.pull(repository=full_image_name)
+            except Exception as e:
+                return error_out("Unable to pull image", e)
+        try:
+            new_container = cli.create_container(name=image, image=full_image_name,
+                                                 hostname=name, ports=ports, environment=envs,
+                                                 labels=labels,
+                                                 host_config=cli.create_host_config(port_bindings=port_bindings,
+                                                                                    links=links,
+                                                                                    publish_all_ports=publish_all_ports))
+            text = new_container['Id']
+            try:
+                cli.start(name)
+                text += " started"
+            except Exception as e:
+                return error_out("Image not started", e)
+        except Exception as e:
+            return error_out("Container not created", e)
         return text
 
 
-class run:
-    def POST(self):
-        # Create a UDS socket
-        text = ""
-        data = web.input()
-        print data
-        registry = data.registry
-        image = data.image
-        envs = data.env
-        ports = data.port
-
-        text += check_output(["docker", "pull",
-                              "{registry}:5000/{image}:latest".format(registry=registry, image=image)])
-
-        name = "{image}_{port}".format(image=image, port=ports.split(":")[0])
-
-        try:
-            text += check_output(["docker", "stop", name])
-        except:
-            text += "Image not stopped"
-
-        try:
-            text += check_output(["docker", "rm", name])
-        except:
-            text += "Image not removed"
-
-        jenvs = json.loads(envs)
-        env_list = []
-        for key, val in jenvs.iteritems():
-            env_list += ["-e", str(key + "=" + val)]
-
-        # print env_list
-
-        print ["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-               "--name={name}".format(name=name)] + env_list + [
-                  "{registry}:5000/{image}".format(registry=registry, image=image)]
-
-        text += check_output(["docker", "run", "--publish={ports}".format(ports=ports), "--detach=true",
-                              "--name={name}".format(name=name)] + env_list + [
-                                 "{registry}:5000/{image}".format(registry=registry, image=image)])
-
-
-        return text
-
-class logs:
+class action:
     def GET(self):
         # Create a UDS socket
         text = """
-        "<div class="col-md-12">
+        <div class="col-md-12">
         """
         data = web.input()
-        text += "<pre>"+check_output(["docker", "logs", data.name[1:]], stderr=STDOUT)+"</pre></div>"
-        return html_template.format(page_title="Logs for {name}".format(name=data.name[1:]), page_content=text)
+        action = data.action
+        if data.name is not None:
+            name = data.name
+        else:
+            name = "Anonymous"
 
-class restart:
-    def GET(self):
-        # Create a UDS socket
-        text = """
-        "<div class="col-md-12">
-        """
-        data = web.input()
-        text += "<pre>"+check_output(["docker", "restart", data.name[1:]], stderr=STDOUT)+"</pre></div>"
-        return html_template.format(page_title="Results for <pre>restart {name}</pre>".format(name=data.name[1:]), page_content=text)
+        id = data.id
+        cli = Client(base_url='unix://var/run/docker.sock')
+        if data.action == "start":
+            try:
+                cli.start(id)
+                text += "Image started"
+            except Exception as e:
+                return error_out("Image not started", e)
+        elif data.action == "stop":
+            try:
+                cli.stop(id)
+                text += "Image stopped"
+            except Exception as e:
+                return error_out("Image not stopped", e)
+        elif data.action == "restart":
+            try:
+                cli.restart(id)
+                text += "Image restarted"
+            except Exception as e:
+                return error_out("Image not restarted", e)
+        elif data.action == "logs":
+            try:
+                text += "<pre>" + cli.logs(id) + "</pre>"
+            except Exception as e:
+                return error_out("Unable to get image logs", e)
+
+        return html_template.format(page_title="{action} for {name}".format(action=action, name=name),
+                                    page_content=text)
+
 
 if __name__ == "__main__":
     app = web.application(urls, globals())
     app.run()
-
-
-
