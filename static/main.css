@@ -3,6 +3,6 @@ table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sor
 }
 
 table#containers td,  table#containers th  {
-            max-width: 10%;
+            max-width: 150px;
             word-wrap: break-word;
 }
