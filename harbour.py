@@ -11,7 +11,8 @@ urls = (
     '/containers', 'Containers',
     '/run', 'run',
     '/drone-harbour-run', 'DroneHarbourRun',
-    '/action', 'action',
+    '/action', 'Action',
+    '/networks', 'Networks'
 )
 
 html_template = ""
@@ -32,6 +33,20 @@ class Containers:
             traceback.print_exc()
             return "Unknown Error: " + str(e)
 
+
+class Networks:
+    def GET(self):
+        # Create a UDS socket
+        text = ""
+        try:
+            cli = Client(base_url='unix://var/run/docker.sock')
+            # Access /path/to/page from /tmp/Labelsprofilesvc.sock
+            networks = cli.networks()
+            col_heads = ["Id", "Name", "IPAM", "Labels", "Manage"]
+            return render.networks(title="Containers", col_heads=col_heads, networks=networks, json2html=json2html)
+        except Exception as e:
+            traceback.print_exc()
+            return "Unknown Error: " + str(e)
 
 class HarbourInternalError(web.HTTPError):
     """500 Internal Server Error`."""
@@ -130,7 +145,7 @@ class DroneHarbourRun:
         return text
 
 
-class action:
+class Action:
     def GET(self):
         # Create a UDS socket
         text = """
