@@ -1,4 +1,4 @@
-$def with (title, col_heads, networks, json2html)
+$def with (title, col_heads, networks, render)
 $var title: $title
 
 <div class="col-md-12">
@@ -15,9 +15,21 @@ $var title: $title
                 $if network is not None:
                     $for col_head in col_heads:
                         <td>
-                            $if col_head == "IPAM":
-                                $if network[col_head]:
-                                    $:json2html.convert(json=network[col_head])
+                            $if col_head == "Driver":
+                                $if network["IPAM"] and "Driver" in network["IPAM"]:
+                                    $network["IPAM"]["Driver"]
+                            $elif col_head == "Config":
+                                $if network["IPAM"] and "Config" in network["IPAM"] and network["IPAM"]["Config"] is not None:
+                                    $for config in network["IPAM"]["Config"]:
+                                        $if config is not None:
+                                            <div>
+                                            $:render.dictionary(config)
+                                            </div>
+                            $elif col_head == "Options":
+                                $if network["IPAM"] and "Options" in network["IPAM"]:
+                                    $network["IPAM"]["Options"]
+                            $elif col_head == "Labels":
+                                    $:render.dictionary(network[col_head])
                             $elif col_head == "Manage":
                                 Inspect
                             $elif col_head == "Id":

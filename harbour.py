@@ -1,4 +1,4 @@
-import json
+import datetime
 import traceback
 from json2html import *
 import web
@@ -17,18 +17,26 @@ urls = (
 
 html_template = ""
 render = web.template.render('templates/', base='layout')
-
+render_plain = web.template.render('templates/')
 
 class Containers:
     def GET(self):
         # Create a UDS socket
-        text = ""
+        options = {}
+        data = web.input()
+        if 'showall' in data:
+            options['all'] = data.showall
+            showall=True
+        else:
+            showall=False
+
         try:
             cli = Client(base_url='unix://var/run/docker.sock')
             # Access /path/to/page from /tmp/Labelsprofilesvc.sock
-            containers = cli.containers()
-            col_heads = ["Names", "Image", "Tag", "Status", "Created", "Ports", "Labels", "Manage"]
-            return render.containers(title="Containers", col_heads=col_heads, containers=containers)
+            containers = cli.containers(**options)
+            col_heads = ["Names", "Image", "Command", "Status", "Created", "Ports", "Labels", "Manage"]
+            return render.containers(title="Containers", col_heads=col_heads, containers=containers,
+                                     render=render_plain, datetime=datetime,showall=showall)
         except Exception as e:
             traceback.print_exc()
             return "Unknown Error: " + str(e)
@@ -42,8 +50,8 @@ class Networks:
             cli = Client(base_url='unix://var/run/docker.sock')
             # Access /path/to/page from /tmp/Labelsprofilesvc.sock
             networks = cli.networks()
-            col_heads = ["Id", "Name", "IPAM", "Labels", "Manage"]
-            return render.networks(title="Containers", col_heads=col_heads, networks=networks, json2html=json2html)
+            col_heads = ["Id", "Name", "Driver", "Config", "Options", "Labels", "Manage"]
+            return render.networks(title="Networks", col_heads=col_heads, networks=networks, render=render_plain)
         except Exception as e:
             traceback.print_exc()
             return "Unknown Error: " + str(e)

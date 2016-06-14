@@ -1,12 +1,26 @@
-$def with (title, col_heads, containers)
+$def with (title, col_heads, containers, render, datetime, showall)
 $var title: $title
 
 <div class="col-md-12">
-    <table class="table">
+    <ul class="nav nav-pills">
+            $if showall:
+                <li>
+            $else:
+                 <li class="active">
+            <a href="/containers">Running</a>
+            </li>
+            $if showall:
+                <li class="active">
+            $else:
+                <li>
+            <a href="/containers?showall=True">All</a>
+            </li>
+    </ul>
+    <table class="table sortable" id="containers">
         <thead>
             <tr>
-                $for col_head in col_heads:
-                    <th> $col_head  </th>
+            $for col_head in col_heads:
+                <th> $col_head  </th>
             </tr>
         </thead>
         <tbody>
@@ -16,22 +30,18 @@ $var title: $title
                     $for col_head in col_heads:
                         <td>
                         $if col_head in container or col_head == "Manage":
-                            $if col_head == 'Labels':
-                                    $ labels = container['Labels']
-                                    $for key in labels:
-                                        <div>$key : $labels[key]</div>
+                            $if col_head == 'Names':
+                                    $:render.plainlist(container[col_head])
+                            $elif col_head == 'Labels':
+                                    $:render.dictionary(container[col_head])
                             $elif col_head == "Ports":
                                 $ ports = container['Ports']
                                 $for port in ports:
-                                    <div class="list-unstyled">
+                                    <div style="white-space: nowrap;">
                                     $if 'PublicPort' in port:
-                                        $port['PublicPort']->
+                                        $port['PublicPort'] <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
                                     $port['PrivatePort']
                                     </div>
-                            $elif col_head == "Names":
-                                $ names = container["Names"]
-                                $for name in names:
-                                    <div class="list-unstyled">$name</div>
                             $elif col_head == "Manage":
                                 $if 'Names' in container:
                                     $ name = container['Names'][0]
@@ -50,6 +60,8 @@ $var title: $title
                                 <input type="hidden" name="name" value="$name">
                                 <input type="hidden" name="id" value="$container['Id']">
                                 </form>
+                            $elif col_head == "Created":
+                                $datetime.datetime.fromtimestamp(int(container[col_head])).strftime('%Y-%m-%d %H:%M:%S')
                             $else:
                                 $container[col_head]
                         </td>

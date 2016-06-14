@@ -1,0 +1,8 @@
+table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after {
+    content: " \25B4\25BE"
+}
+
+table#containers td,  table#containers th  {
+            max-width: 10%;
+            word-wrap: break-word;
+}
