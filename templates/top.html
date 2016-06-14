@@ -1,0 +1,25 @@
+$def with (title, col_heads, processes)
+$var title: $title
+
+<div class="col-md-12">
+    <table class="table">
+        <thead>
+            <tr>
+                $for col_head in col_heads:
+                    <th> $col_head  </th>
+            </tr>
+        </thead>
+        <tbody>
+            $for process in processes:
+                <tr>
+                $if process is not None:
+                    $for col_head in col_heads:
+                        <td>
+                            $process[col_head]
+                        </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+

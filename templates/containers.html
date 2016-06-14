@@ -1,0 +1,61 @@
+$def with (title, col_heads, containers)
+$var title: $title
+
+<div class="col-md-12">
+    <table class="table">
+        <thead>
+            <tr>
+                $for col_head in col_heads:
+                    <th> $col_head  </th>
+            </tr>
+        </thead>
+        <tbody>
+            $for container in containers:
+                <tr>
+                $if container is not None:
+                    $for col_head in col_heads:
+                        <td>
+                        $if col_head in container or col_head == "Manage":
+                            $if col_head == 'Labels':
+                                    $ labels = container['Labels']
+                                    $for key in labels:
+                                        <div>$key : $labels[key]</div>
+                            $elif col_head == "Ports":
+                                $ ports = container['Ports']
+                                $for port in ports:
+                                    <div class="list-unstyled">
+                                    $if 'PublicPort' in port:
+                                        $port['PublicPort']->
+                                    $port['PrivatePort']
+                                    </div>
+                            $elif col_head == "Names":
+                                $ names = container["Names"]
+                                $for name in names:
+                                    <div class="list-unstyled">$name</div>
+                            $elif col_head == "Manage":
+                                $if 'Names' in container:
+                                    $ name = container['Names'][0]
+                                $else:
+                                    $ name = "anonymous"
+                                <form action="/action">
+                                    <select id="action_select" name="action"  onchange="this.form.submit();" class="form-control">
+                                        <option value="" disabled selected style="display:none;">Select</option>
+                                        <option value="start">Start</option>
+                                        <option value="stop">Stop</option>
+                                        <option value="restart">Restart</option>
+                                        <option value="logs">Logs</option>
+                                        <option value="top">Top</option>
+                                        <option value="inspect">Inspect</option>
+                                    </select>
+                                <input type="hidden" name="name" value="$name">
+                                <input type="hidden" name="id" value="$container['Id']">
+                                </form>
+                            $else:
+                                $container[col_head]
+                        </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+

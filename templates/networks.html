@@ -1,0 +1,33 @@
+$def with (title, col_heads, networks, json2html)
+$var title: $title
+
+<div class="col-md-12">
+    <table class="table">
+        <thead>
+            <tr>
+                $for col_head in col_heads:
+                    <th> $col_head  </th>
+            </tr>
+        </thead>
+        <tbody>
+            $for network in networks:
+                <tr>
+                $if network is not None:
+                    $for col_head in col_heads:
+                        <td>
+                            $if col_head == "IPAM":
+                                $if network[col_head]:
+                                    $:json2html.convert(json=network[col_head])
+                            $elif col_head == "Manage":
+                                Inspect
+                            $elif col_head == "Id":
+                                $network[col_head][:12]
+                            $else:
+                                $network[col_head]
+                        </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
