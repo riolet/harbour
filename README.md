@@ -1,3 +1,7 @@
 # Harbour
 
-A simple docker container deployment tool
+A simple web frontend for managing Docker daemon. Integrates with drone.io for deployment.
+
+## Usage
+
+`python harbour.py <port>`
