@@ -3,6 +3,7 @@ import traceback
 from json2html import *
 import web
 from docker import Client
+import json
 
 BASE_URL = 'unix://var/run/docker.sock'
 
@@ -10,6 +11,7 @@ urls = (
     '/', 'Containers',
     '/containers', 'Containers',
     '/run', 'run',
+    '/create-container', 'CreateContainer',
     '/drone-harbour-run', 'DroneHarbourRun',
     '/action', 'Action',
     '/networks', 'Networks'
@@ -32,7 +34,6 @@ class Containers:
 
         try:
             cli = Client(base_url='unix://var/run/docker.sock')
-            # Access /path/to/page from /tmp/Labelsprofilesvc.sock
             containers = cli.containers(**options)
             col_heads = ["Names", "Image", "Command", "Status", "Created", "Ports", "Labels", "Manage"]
             return render.containers(title="Containers", col_heads=col_heads, containers=containers,
@@ -40,6 +41,63 @@ class Containers:
         except Exception as e:
             traceback.print_exc()
             return "Unknown Error: " + str(e)
+
+
+class CreateContainer:
+    def GET(self):
+        try:
+            return render.createcontainerform(title="Create Container")
+        except Exception as e:
+            traceback.print_exc()
+            return "Error: " + str(e)
+
+    def POST(self):
+        try:
+            options = {}
+            host_options = {}
+            data = web.input(port_bindings_cont=[''],
+                             port_bindings_host=[''],
+                             environment_key=[''],
+                             environment_value=[''])
+            fields = ['image', 'name', 'command', 'environment', 'ports', 'port_bindings', 'publish_all_ports', 'network']
+            data['environment'] = 'process'
+            data['port_bindings'] = 'process'
+            for field in fields:
+                if field in data and data[field] is not None and len(data[field])>0 :
+                    if field == 'ports':
+                        options[field] = json.loads('['+data[field]+']')
+                    elif field == 'environment':
+                        environment_dic = {}
+                        for i in range(len(data['environment_key'])):
+                            environment_dic[str(data['environment_key'][i])] = str(data['environment_value'][i])
+                        options[field] = environment_dic
+                    elif field == 'port_bindings':
+                        port_bindings_dic = {}
+                        for i in range(len(data['port_bindings_cont'])):
+                            port_bindings_dic[str(data['port_bindings_cont'][i])] = str(data['port_bindings_host'][i])
+                        host_options[field] = port_bindings_dic
+                    else:
+                        options[field] = data[field]
+            cli = Client(base_url='unix://var/run/docker.sock')
+
+            options['host_config'] = cli.create_host_config(**host_options)
+            print options
+
+            result = cli.pull(repository=options['image'],stream=True)
+            web.header('Content-type', 'text/html')
+            web.header('Transfer-Encoding', 'chunked')
+            yield render_plain.layout_top(title="Harbour - Creating container")
+            for json_line in result:
+                line = json.loads(json_line)
+                if 'id' in line and 'status' in line:
+                    yield line['id']+" "+line['status']+"\n"
+            new_container = cli.create_container(**options)
+            yield render_plain.notification_plain(message="Container {id} successfully created".format(id=new_container['Id']),
+                                        status="success")
+            yield render_plain.layout_bottom()
+        except Exception as e:
+            traceback.print_exc()
+            yield "Error creating container: " + str(e)
 
 
 class Networks:
@@ -169,13 +227,15 @@ class Action:
         id = data.id
         cli = Client(base_url='unix://var/run/docker.sock')
 
-        if action in ["start", "stop", "restart"]:
+        if action in ["start", "stop", "restart", "remove"]:
             try:
                 if data.action == "start":
                     cli.start(id)
                 elif data.action == "stop":
                     cli.stop(id)
-                else:
+                elif data.action == "remove":
+                    cli.remove_container(id)
+                elif data.action == "restart":
                     cli.restart(id)
                 return render.notification(title="Harbour - {action} for {name}".format(action=action, name=name),
                                            message="Image {name} {action}ed successfully".format(action=action, name=name),
