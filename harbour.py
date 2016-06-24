@@ -153,24 +153,27 @@ class DroneHarbourRun:
 
         cli.pull("{registry}:5000/{image}:latest".format(registry=registry, image=image))
 
-        name = image
+        if 'name' in data and data['name'] is not None:
+            name = data['name']
+        else:
+            name = None
 
         # try:
         #     cli.create_network(name="network1", driver="bridge")
         # except:
         #     text += "Network not created"
+        if name is not None:
+            try:
+                cli.stop(name)
+                text += "Image stopped"
+            except:
+                text += "Image not stopped"
 
-        try:
-            cli.stop(name)
-            text += "Image stopped"
-        except:
-            text += "Image not stopped"
-
-        try:
-            cli.remove_container(name)
-            text += "Image removed"
-        except:
-            text += "Image not removed"
+            try:
+                cli.remove_container(name)
+                text += "Image removed"
+            except:
+                text += "Image not removed"
 
 
         env_list = []
@@ -208,9 +211,10 @@ class DroneHarbourRun:
                                                                                     publish_all_ports=publish_all_ports,
                                                                                     binds=volume_bindings,
                                                                                     network_mode="network2"),**options)
-            text = new_container['Id']
+            container_id = new_container['Id']
+            text = container_id
             try:
-                cli.start(name)
+                cli.start(container_id)
                 text += " started"
             except Exception as e:
                 return error_out("Image not started", e)
