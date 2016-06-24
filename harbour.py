@@ -144,6 +144,8 @@ class DroneHarbourRun:
         port_bindings = data['port_bindings'] or {}
         #links = data['links'] or {}
         links = {}
+        volumes = data['volumes'] or []
+        volume_bindings = data['volume_bindings'] or []
         publish_all_ports = data['publish_all_ports'] or False
 
         cli = Client(base_url='unix://var/run/docker.sock')
@@ -195,10 +197,11 @@ class DroneHarbourRun:
         try:
             new_container = cli.create_container(name=image, image=full_image_name,
                                                  hostname=name, ports=ports, environment=envs,
-                                                 labels=labels,
+                                                 labels=labels, volumes=volumes,
                                                  host_config=cli.create_host_config(port_bindings=port_bindings,
                                                                                     links=links,
                                                                                     publish_all_ports=publish_all_ports,
+                                                                                    binds=volume_bindings,
                                                                                     network_mode="network2"))
             text = new_container['Id']
             try:
