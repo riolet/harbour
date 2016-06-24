@@ -136,6 +136,7 @@ class DroneHarbourRun:
         data = json.loads(web.data(), strict=False)
         print web.data()
         print data
+
         registry = data['registry']
         image = data['image']
         tag = ('tag' in data and data['tag']) or None
@@ -195,14 +196,18 @@ class DroneHarbourRun:
             except Exception as e:
                 return error_out("Unable to pull image", e)
         try:
-            new_container = cli.create_container(name=image, image=full_image_name,
+            #-ToDo- Fix this
+            options = {}
+            if name in data and data['name'] is not None:
+                options['name'] = data['name']
+            new_container = cli.create_container(image=full_image_name,
                                                  hostname=name, ports=ports, environment=envs,
                                                  labels=labels, volumes=volumes,
                                                  host_config=cli.create_host_config(port_bindings=port_bindings,
                                                                                     links=links,
                                                                                     publish_all_ports=publish_all_ports,
                                                                                     binds=volume_bindings,
-                                                                                    network_mode="network2"))
+                                                                                    network_mode="network2"),**options)
             text = new_container['Id']
             try:
                 cli.start(name)
