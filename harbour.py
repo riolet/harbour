@@ -201,8 +201,8 @@ class DroneHarbourRun:
         try:
             #-ToDo- Fix this
             options = {}
-            if name in data and data['name'] is not None:
-                options['name'] = data['name']
+            if name is not None:
+                options['name'] = name
             new_container = cli.create_container(image=full_image_name,
                                                  hostname=name, ports=ports, environment=envs,
                                                  labels=labels, volumes=volumes,
