@@ -15,6 +15,9 @@ $var title: $title
                 <li>
             <a href="/containers?showall=True">All</a>
             </li>
+            <li>
+                <a href="/create-container"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> New Container</a>
+            </li>
     </ul>
     <table class="table sortable" id="containers">
         <thead>
@@ -56,6 +59,7 @@ $var title: $title
                                         <option value="logs">Logs</option>
                                         <option value="top">Top</option>
                                         <option value="inspect">Inspect</option>
+                                        <option value="remove">Remove</option>
                                     </select>
                                 <input type="hidden" name="name" value="$name">
                                 <input type="hidden" name="id" value="$container['Id']">

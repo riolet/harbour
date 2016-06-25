@@ -34,7 +34,7 @@ $var title: $title
                                 Inspect
                             $elif col_head == "Id":
                                 $network[col_head][:12]
-                            $else:
+                            $elif col_head in network:
                                 $network[col_head]
                         </td>
             </tr>

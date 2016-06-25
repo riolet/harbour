@@ -1,0 +1,8 @@
+$def with(result, json)
+<pre>
+    $for json_line in result:
+        $ line = json.loads(json_line)
+        $if 'id' in line and 'status' in line:
+            $line['id'] $line['status']
+    <!-- This line is intentionally left blank -->
+</pre>
