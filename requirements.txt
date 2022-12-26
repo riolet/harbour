@@ -8,4 +8,4 @@ six==1.10.0
 urllib3==1.15.1
 web.py==0.37
 websocket-client==0.37.0
-wheel==0.24.0
+wheel==0.38.1
